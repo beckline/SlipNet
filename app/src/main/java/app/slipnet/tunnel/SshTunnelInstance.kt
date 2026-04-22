@@ -558,22 +558,22 @@ class SshTunnelInstance(val instanceId: String = "default") {
             newSession.connect(TUNNEL_CONNECT_TIMEOUT_MS)
 
             if (!newSession.isConnected) {
-                return Result.failure(RuntimeException("SSH session failed to connect through DNSTT"))
+                return Result.failure(RuntimeException("SSH session failed to connect through tunnel"))
             }
 
             session = newSession
-            Log.i(TAG, "SSH session connected (over DNSTT tunnel, auth=${sshAuthType.value})")
+            Log.i(TAG, "SSH session connected (over tunnel, auth=${sshAuthType.value})")
 
             startSocksServer(listenHost, listenPort)
 
-            Log.i(TAG, "SSH SOCKS5 proxy started on $listenHost:$listenPort (over DNSTT)")
+            Log.i(TAG, "SSH SOCKS5 proxy started on $listenHost:$listenPort (over tunnel)")
 
             // Pre-warm DNS channel pool in background
             prewarmDnsChannels()
 
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to start SSH tunnel over DNSTT", e)
+            Log.e(TAG, "Failed to start SSH tunnel over tunnel", e)
             stop()
             Result.failure(e)
         }

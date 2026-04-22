@@ -1978,6 +1978,8 @@ class SlipNetVpnService : VpnService() {
                 return
             }
 
+            vpnRepository.setCurrentTunnelType(TunnelType.NAIVE_SSH)
+            currentTunnelType = TunnelType.NAIVE_SSH
             vpnRepository.setProxyConnected(profile)
             Log.i(TAG, "Proxy-only mode: NaiveProxy+SSH SOCKS5 proxy ready on $proxyHost:$proxyPort")
             finishConnection()
@@ -2097,6 +2099,8 @@ class SlipNetVpnService : VpnService() {
             return
         }
 
+        vpnRepository.setCurrentTunnelType(TunnelType.NAIVE_SSH)
+        currentTunnelType = TunnelType.NAIVE_SSH
         Log.d(TAG, "NaiveProxy+SSH tunnel started")
         finishConnection()
     }
@@ -2172,6 +2176,8 @@ class SlipNetVpnService : VpnService() {
                 return
             }
 
+            vpnRepository.setCurrentTunnelType(TunnelType.NAIVE)
+            currentTunnelType = TunnelType.NAIVE
             vpnRepository.setProxyConnected(profile)
             Log.i(TAG, "Proxy-only mode: NaiveProxy SOCKS5 proxy ready on $proxyHost:$proxyPort")
             finishConnection()
@@ -2265,6 +2271,8 @@ class SlipNetVpnService : VpnService() {
             return
         }
 
+        vpnRepository.setCurrentTunnelType(TunnelType.NAIVE)
+        currentTunnelType = TunnelType.NAIVE
         Log.d(TAG, "Standalone NaiveProxy tunnel started")
         finishConnection()
     }
@@ -5161,6 +5169,7 @@ class SlipNetVpnService : VpnService() {
         SlipstreamSocksBridge.resetTrafficStats()
         DnsttSocksBridge.resetTrafficStats()
         SshTunnelBridge.resetTrafficStats()
+        NaiveSocksBridge.resetTrafficStats()
         Socks5ProxyBridge.resetTrafficStats()
 
         disconnectJob = serviceScope.launch {
