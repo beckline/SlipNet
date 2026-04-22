@@ -4833,6 +4833,30 @@ class SlipNetVpnService : VpnService() {
         }
     }
 
+    /**
+     * Zero-throughput watchdog is only safe for tunnel types whose byte counters
+     * are authoritative enough to distinguish "idle" from "broken".
+     *
+     * Naive and Naive+SSH already have transport-specific health checks:
+     * - Naive process + local SOCKS bridge health
+     * - DNS worker pool death detection
+     * - SSH liveness probing for Naive+SSH
+     *
+     * Their byte counters can legitimately lag behind real traffic or reset
+     * across reconnect paths, so treating "0 total bytes" as fatal creates
+     * false disconnects on otherwise healthy tunnels.
+     */
+    private fun shouldEnforceZeroThroughputWatchdog(): Boolean {
+        if (isProxyOnly) return false
+
+        return when (currentTunnelType) {
+            TunnelType.DOH,
+            TunnelType.NAIVE,
+            TunnelType.NAIVE_SSH -> false
+            else -> true
+        }
+    }
+
 
     /**
      * Resolve a resolver host to a numeric IP for [Builder.addDnsServer].
@@ -5060,10 +5084,9 @@ class SlipNetVpnService : VpnService() {
                 // Tunnel health: warn if zero cumulative throughput for too long.
                 // This detects broken tunnels that show "Connected" but relay no data
                 // (e.g. overloaded servers, wrong auth) while DNS overhead drains SIM data.
-                // Skip in proxy-only mode: no TUN = no DNS overhead, and apps may be idle.
-                // Skip for DoH: only DNS is routed through VPN (/32 route), so idle
-                // periods with zero tun2socks traffic are normal (especially on TV).
-                if (!isProxyOnly && currentTunnelType != TunnelType.DOH && current.totalBytes == 0L) {
+                // Only enforce this for tunnel types whose byte counters are
+                // trustworthy enough for fatal decisions.
+                if (shouldEnforceZeroThroughputWatchdog() && current.totalBytes == 0L) {
                     zeroThroughputSeconds += interval / 1000
                     if (!tunnelHealthWarningShown && zeroThroughputSeconds >= ZERO_THROUGHPUT_WARNING_SECONDS) {
                         tunnelHealthWarningShown = true

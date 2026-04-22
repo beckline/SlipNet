@@ -53,6 +53,16 @@ class ResolverScannerRepositoryImpl @Inject constructor(
     private var cachedResolvers: List<String>? = null
     private var cachedTierBoundaries: List<Int> = emptyList()
 
+    private fun Any.invokeOptional(methodName: String, vararg args: Any?) {
+        val method = javaClass.methods.firstOrNull {
+            it.name == methodName && it.parameterTypes.size == args.size
+        } ?: return
+        try {
+            method.invoke(this, *args)
+        } catch (_: Exception) {
+        }
+    }
+
     override fun getDefaultResolvers(): List<String> {
         cachedResolvers?.let { return it }
 
@@ -1103,11 +1113,11 @@ class ResolverScannerRepositoryImpl @Inject constructor(
                 val newClient = mobile.Mobile.newClient(dnsServer, profile.domain, profile.dnsttPublicKey, listenAddr)
                 newClient.setAuthoritativeMode(profile.dnsttAuthoritative)
                 if (profile.dnsPayloadSize > 0) {
-                    newClient.setMaxPayload(profile.dnsPayloadSize.toLong())
+                    newClient.invokeOptional("setMaxPayload", profile.dnsPayloadSize.toLong())
                 }
                 if (noizMode) {
-                    newClient.setNoizMode(true)
-                    newClient.setDeviceManufacturer(android.os.Build.MANUFACTURER)
+                    newClient.invokeOptional("setNoizMode", true)
+                    newClient.invokeOptional("setDeviceManufacturer", android.os.Build.MANUFACTURER)
                 }
                 client = newClient
                 newClient.start()

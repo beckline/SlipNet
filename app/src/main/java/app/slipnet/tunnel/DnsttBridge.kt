@@ -22,6 +22,21 @@ object DnsttBridge {
     @Volatile private var pendingReleasePort: Int = 0
     private var vpnServiceRef: WeakReference<VpnService>? = null
 
+    private fun Any.invokeOptional(methodName: String, vararg args: Any?) {
+        val method = javaClass.methods.firstOrNull {
+            it.name == methodName && it.parameterTypes.size == args.size
+        } ?: run {
+            Log.d(TAG, "DNSTT mobile binding missing optional method: $methodName")
+            return
+        }
+
+        try {
+            method.invoke(this, *args)
+        } catch (e: Exception) {
+            Log.w(TAG, "Optional DNSTT mobile binding call failed: $methodName: ${e.message}")
+        }
+    }
+
     /**
      * Set the VPN service reference for socket protection.
      */
@@ -130,20 +145,20 @@ object DnsttBridge {
             val newClient = Mobile.newClient(dnsAddr, tunnelDomain, publicKey, listenAddr)
             newClient.setAuthoritativeMode(authoritativeMode)
             if (maxPayload > 0) {
-                newClient.setMaxPayload(maxPayload.toLong())
+                newClient.invokeOptional("setMaxPayload", maxPayload.toLong())
             }
             if (noizMode) {
-                newClient.setNoizMode(true)
-                newClient.setDeviceManufacturer(Build.MANUFACTURER)
+                newClient.invokeOptional("setNoizMode", true)
+                newClient.invokeOptional("setDeviceManufacturer", Build.MANUFACTURER)
                 if (stealthMode) {
-                    newClient.setStealthMode(true)
+                    newClient.invokeOptional("setStealthMode", true)
                 }
             }
             if (!socksProxyAddr.isNullOrEmpty()) {
-                newClient.setSOCKS5Proxy(socksProxyAddr, socksProxyUser ?: "", socksProxyPass ?: "")
+                newClient.invokeOptional("setSOCKS5Proxy", socksProxyAddr, socksProxyUser ?: "", socksProxyPass ?: "")
             }
-            newClient.setResolverMode(resolverMode)
-            newClient.setRRSpreadCount(rrSpreadCount.toLong())
+            newClient.invokeOptional("setResolverMode", resolverMode)
+            newClient.invokeOptional("setRRSpreadCount", rrSpreadCount.toLong())
             client = newClient
             currentPort = actualPort
 
